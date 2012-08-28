@@ -108,7 +108,7 @@ class SmileTest(osv.osv_memory):
                     test_case = {'classname': module_name,
                                  'name': filename,
                                  'time': 0,
-                                 'error': None, }
+                                 'error': {}, }
                     start = time.time()
                     try:
                         test_suite['tests'] += 1
