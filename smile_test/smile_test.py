@@ -120,17 +120,13 @@ class SmileTest(osv.osv_memory):
                         # Yaml traceback do not work, certainly because of the compile clause
                         # that messes up line numbers
 
-                        possible_yaml_statement, statement_lineno = None, None
+                        possible_yaml_statement = None
                         # Get the deepest frame
                         frame_list = inspect.trace()
                         deepest_frame = frame_list[-1][0]
                         locals_to_match = ['statements', 'code_context', 'model']
                         for frame_inf in frame_list:
                             frame = frame_inf[0]
-                            if possible_yaml_statement and not statement_lineno:
-                                # possible_yaml_statement was found in last frame
-                                # and here is the expected lineno
-                                statement_lineno = frame.f_lineno
                             for local_to_match in locals_to_match:
                                 if local_to_match not in frame.f_locals:
                                     break
@@ -142,8 +138,8 @@ class SmileTest(osv.osv_memory):
                             numbered_line_statement = ""
                             for index, line in enumerate(possible_yaml_statement.split('\n'), start=1):
                                 numbered_line_statement += "%03d>  %s\n" % (index, line)
-                            yaml_error = "For yaml file, check line %s of statement:\n%s" % (statement_lineno,
-                                                                                             numbered_line_statement)
+                            yaml_error = "For yaml file, check the line number indicated in the traceback against this statement:\n%s"
+                            yaml_error = yaml_error % numbered_line_statement
 
                             traceback_msg += '\n\n%s' % yaml_error
 
