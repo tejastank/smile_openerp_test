@@ -3,6 +3,7 @@
 -
   !python {model: ir.model}: |
     model_ids = self.search(cr, uid, [], context)
+    errors = []
     for model in self.browse(cr, uid, model_ids, context):
         if model.model in ['account.addtmpl.wizard', 'account.common.partner.report', 'account.aged.trial.balance',
                            'account.partner.balance', 'account.partner.ledger', 'account.analytic.Journal.report',
@@ -20,4 +21,8 @@
             try: 
                 self.pool.get(model.model).fields_view_get(cr, uid, False, view_type, context=context)
             except Exception, e:
-                raise Exception('Error in fields_view_get for model: %s and view_type:%s - Error:%s' % (model.model, view_type, repr(e)))
+                err_info = (model.model, view_type, repr(e))
+                errors.append(err_info)
+    if errors:
+        err_details = "\n".join(["(%s, %s): %s" % (model, view_type, err) for model, view_type, err in errors])
+        raise Exception('Error in fields_view_get for models/view_type and error:\n%s' % err_details)
