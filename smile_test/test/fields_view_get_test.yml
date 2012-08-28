@@ -1,0 +1,23 @@
+-
+  I get the first contract of stinsonbarney
+-
+  !python {model: ir.model}: |
+    model_ids = self.search(cr, uid, [], context)
+    for model in self.browse(cr, uid, model_ids, context):
+        if model.model in ['account.addtmpl.wizard', 'account.common.partner.report', 'account.aged.trial.balance',
+                           'account.partner.balance', 'account.partner.ledger', 'account.analytic.Journal.report',
+                           'base.module.upgrade', 'report.webkit.actions', 'account.analytic.balance', 'account.analytic.chart',
+                           'account.analytic.cost.ledger', 'account.analytic.cost.ledger.journal.report',
+                           'ir.actions.configuration.wizard', 'account.analytic.inverted.balance', 'account.automatic.reconcile',
+                           'account.balance.report', 'account.bank.accounts.wizard', 'account.bs.report', 'account.central.journal',
+                           'account.change.currency', 'account.chart', 'account.common.account.report', 'account.common.journal.report',
+                           'account.common.report', 'account.fiscalyear.close', 'account.fiscalyear.close.state', 'account.general.journal',
+                           'account.installer', 'account.installer.modules', 'account.invoice.cancel', 'account.invoice.confirm',
+                           'account.invoice.refund']:
+            # Ignore models from server and official addons
+            continue
+        for view_type in ['form', 'tree']:
+            try: 
+                self.pool.get(model.model).fields_view_get(cr, uid, False, view_type, context=context)
+            except Exception, e:
+                raise Exception('Error in fields_view_get for model: %s and view_type:%s - Error:%s' % (model.model, view_type, repr(e)))
