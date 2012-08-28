@@ -19,7 +19,10 @@
 #
 ##############################################################################
 
-import coverage
+try:
+    import coverage
+except ImportError:
+    raise ImportError('Please install coverage package')
 
 from service.web_services import common
 from release import major_version
