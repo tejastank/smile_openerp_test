@@ -309,7 +309,7 @@ if __name__ == '__main__':
     # Start OpenERP
     # disable_test, since we will run them through smile_test
     server = ServerProxy(conf['manual_launch_command'], conffile='openerp.conf',
-                         log_level='warn', log_handler=':WARNING', test_disable=True, version=conf.get('openerp_version', '6.0'))
+                         log_level='test', log_handler=':WARNING', test_disable=True, version=conf.get('openerp_version', '6.0'))
     server.start()
     # Create test database
     db = server.create_timed_db(demo=True, lang='fr_FR', user_password='admin')
