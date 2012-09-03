@@ -47,6 +47,9 @@ def load_config(filename, section='options'):
     with open(filename, 'r') as config_file:
         p.readfp(config_file)
         config = dict(p.items(section))
+        for key, value in config.iteritems():
+            if value.lower() in ('true', 'false'):
+                config[key] = eval(value.capitalize())
         return config
 
 
