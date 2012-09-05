@@ -87,12 +87,50 @@ class SmileTest(osv.osv_memory):
                 error.text = test_case['error']['stack_trace']
                 error.attrib['type'] = test_case['error']['type']
                 error.attrib['message'] = test_case['error']['message']
+            if test_case['skipped']:
+                skipped = ElementTree.SubElement(xml_testcase, 'skipped')
         return ElementTree.tostring(xml_testsuite, encoding='utf8')
 
-    def test(self, cr, uid, module_list='all', xunit=True, context=None):
+
+    def build_error_msg(self, traceback_msg, frame_list):
+        # Yaml traceback do not work, certainly because of the compile clause
+        # that messes up line numbers
+        error_msg = traceback_msg
+        deepest_frame = frame_list[-1][0]
+
+        possible_yaml_statement = None
+        locals_to_match = ['statements', 'code_context', 'model']
+        for frame_inf in frame_list:
+            frame = frame_inf[0]
+            for local_to_match in locals_to_match:
+                if local_to_match not in frame.f_locals:
+                    break
+            else:
+                # all locals found ! we are in process_python function
+                possible_yaml_statement = frame.f_locals['statements']
+
+        if possible_yaml_statement:
+            numbered_line_statement = ""
+            for index, line in enumerate(possible_yaml_statement.split('\n'), start=1):
+                numbered_line_statement += "%03d>  %s\n" % (index, line)
+            yaml_error = "For yaml file, check the line number indicated in the traceback against this statement:\n%s"
+            yaml_error = yaml_error % numbered_line_statement
+
+            error_msg += '\n\n%s' % yaml_error
+        error_msg += """\n\nLocal variables in deepest are: %s """ % repr(deepest_frame.f_locals)
+        return error_msg
+
+    def test(self, cr, uid, module_list='all', xunit=True, ignores=None, context=None):
+        """
+        module_list should equal 'all' or a list of module name
+        ignores is a dict containing: {'module1': ['test_file_to_ignore1', 'test_file_to_ignore2' ], 'module2': ...}
+        """
         if module_list == 'all' or 'all' in module_list:
             module_list = self.get_all_installed_module_list(cr, ('installed', 'to upgrade'))
+        # get a dict containing: {'module1': ['test_file1', 'test_file2' ], 'module2': ...}
         module_test_files = self.build_test_list_from_modules(module_list)
+
+        ignores = ignores or {}
 
         new_cr = pooler.get_db(cr.dbname).cursor()
 
@@ -104,52 +142,31 @@ class SmileTest(osv.osv_memory):
                       'test_cases': [], }
         try:
             for module_name in module_test_files:
+                ignored_files = ignores.get(module_name, [])
                 for filename in module_test_files[module_name]:
                     test_case = {'classname': module_name,
                                  'name': filename,
                                  'time': 0,
-                                 'error': {}, }
+                                 'error': {},
+                                 'skipped': filename in ignored_files}
                     start = time.time()
-                    try:
-                        test_suite['tests'] += 1
-                        self._run_test(new_cr, module_name, filename)
+                    test_suite['tests'] += 1
+                    if not test_case['skipped']:
+                        try:
+                            self._run_test(new_cr, module_name, filename)
+                        except Exception, e:
+                            test_suite['errors'] += 1
+                            traceback_msg = traceback.format_exc()
+                            frame_list = inspect.trace()
 
-                    except Exception, e:
-                        test_suite['errors'] += 1
-                        traceback_msg = traceback.format_exc()
-                        # Yaml traceback do not work, certainly because of the compile clause
-                        # that messes up line numbers
+                            test_case['error'] = {'type': str(type(e)),
+                                                  'message': repr(e),
+                                                  'stack_trace': self.build_error_msg(traceback_msg, frame_list), }
+                    else:
+                        test_suite['skipped'] += 1
 
-                        possible_yaml_statement = None
-                        # Get the deepest frame
-                        frame_list = inspect.trace()
-                        deepest_frame = frame_list[-1][0]
-                        locals_to_match = ['statements', 'code_context', 'model']
-                        for frame_inf in frame_list:
-                            frame = frame_inf[0]
-                            for local_to_match in locals_to_match:
-                                if local_to_match not in frame.f_locals:
-                                    break
-                            else:
-                                # all locals found ! we are in process_python function
-                                possible_yaml_statement = frame.f_locals['statements']
-
-                        if possible_yaml_statement:
-                            numbered_line_statement = ""
-                            for index, line in enumerate(possible_yaml_statement.split('\n'), start=1):
-                                numbered_line_statement += "%03d>  %s\n" % (index, line)
-                            yaml_error = "For yaml file, check the line number indicated in the traceback against this statement:\n%s"
-                            yaml_error = yaml_error % numbered_line_statement
-
-                            traceback_msg += '\n\n%s' % yaml_error
-
-                        traceback_msg += """\n\nLocal variables in deepest are: %s """ % repr(deepest_frame.f_locals)
-                        test_case['error'] = {'type': str(type(e)),
-                                              'message': repr(e),
-                                              'stack_trace': traceback_msg, }
-                    finally:
-                        test_case['time'] = (time.time() - start)
-                        test_suite['test_cases'].append(test_case)
+                    test_case['time'] = (time.time() - start)
+                    test_suite['test_cases'].append(test_case)
                 new_cr.rollback()
         finally:
             new_cr.close()
