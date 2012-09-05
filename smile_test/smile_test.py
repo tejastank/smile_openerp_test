@@ -163,7 +163,7 @@ class SmileTest(osv.osv_memory):
                                                   'message': repr(e),
                                                   'stack_trace': self.build_error_msg(traceback_msg, frame_list), }
                     else:
-                        test_suite['skipped'] += 1
+                        test_suite['skip'] += 1
 
                     test_case['time'] = (time.time() - start)
                     test_suite['test_cases'].append(test_case)
