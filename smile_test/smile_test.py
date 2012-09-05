@@ -174,9 +174,9 @@ class SmileTest(osv.osv_memory):
             return self.test_suite_to_xunit(test_suite)
         return test_suite
 
-    def test_to_xunitfile(self, cr, uid, module_list, filename, context=None):
+    def test_to_xunitfile(self, cr, uid, module_list, filename, ignores=None, context=None):
         with open(filename, 'w') as xunit_file:
-            xunit_str = self.test(cr, uid, module_list, xunit=True, context=context)
+            xunit_str = self.test(cr, uid, module_list, xunit=True, ignores=ignores, context=context)
             xunit_file.write(xunit_str)
         return True
 
