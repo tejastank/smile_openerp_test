@@ -322,7 +322,13 @@ if __name__ == '__main__':
     module_list = conf['module_list'].split(',')
     db.install_modules(module_list)
     time.sleep(5)
-    db.sock_exec('smile.test', 'test_to_xunitfile', 'all', conf['xunit_file'])
+    ignore_tests = conf.get('ignore_tests', False)
+    if ignore_tests:
+        try:
+            ignore_tests = eval(ignore_tests)
+        except (NameError, SyntaxError):
+            ignore_tests = False
+    db.sock_exec('smile.test', 'test_to_xunitfile', 'all', conf['xunit_file'], ignore_tests)
     time.sleep(5)
     server.sock_common.coverage_stop_and_save(conf.get('coverage_file'), source_dir.python_files)
     time.sleep(1)
