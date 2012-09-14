@@ -180,4 +180,20 @@ class SmileTest(osv.osv_memory):
             xunit_file.write(xunit_str)
         return True
 
+    def detect_cascade_on_delete_on_invalidation(self, cr, uid):
+        """ Returns the list of model that can be deleted through a postgres ONDELETE CASCADE,
+        while having to invalidate stored function fields
+        """
+        cascadable_model = {}
+        result = {}
+        for model_obj in self.pool.obj_pool.values():
+            for field_name, field in model_obj._columns.items():
+                if field.ondelete == 'cascade':
+                    cascadable_model.setdefault(model_obj._name, []).append(field_name)
+
+        for model_name in cascadable_model:
+            if model_name in self.pool._store_function:
+                result[model_name] = cascadable_model[model_name]
+        return result
+
 SmileTest()
