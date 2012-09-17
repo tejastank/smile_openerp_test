@@ -1,0 +1,8 @@
+-
+  I dectect cascade invalidation
+-
+  !python {model: smile.test}: |
+    result = self.detect_cascade_on_delete_on_invalidation(verbose=False)
+    if result:
+        err_details = "\n".join(["Model: %s, field %s, carried by %s" % (res, result[res][1], result[res][0] for res in result])
+        raise Exception('Error in detect_cascade_on_delete_on_invalidation: %s' % err_details)

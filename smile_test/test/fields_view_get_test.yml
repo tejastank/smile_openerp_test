@@ -1,5 +1,5 @@
 -
-  I get the first contract of stinsonbarney
+  I test all fields_view_get
 -
   !python {model: ir.model}: |
     model_ids = self.search(cr, uid, [], context)
