@@ -180,7 +180,13 @@ class SmileTest(osv.osv_memory):
             xunit_file.write(xunit_str)
         return True
 
-    def detect_cascade_on_delete_on_invalidation(self, cr, uid):
+    def _get_invalidating_fields(self, model_name):
+        res = list()
+        for model_field_tuple in self.pool._store_function.get(model_name, list()):
+            res.append((model_field_tuple[0], model_field_tuple[1]))
+        return res
+
+    def detect_cascade_on_delete_on_invalidation(self, cr, uid, verbose=True):
         """ Returns the list of model that can be deleted through a postgres ONDELETE CASCADE,
         while having to invalidate stored function fields
         """
@@ -189,11 +195,21 @@ class SmileTest(osv.osv_memory):
         for model_obj in self.pool.obj_pool.values():
             for field_name, field in model_obj._columns.items():
                 if field.ondelete == 'cascade':
-                    cascadable_model.setdefault(model_obj._name, []).append(field_name)
-
-        for model_name in cascadable_model:
-            if model_name in self.pool._store_function:
-                result[model_name] = cascadable_model[model_name]
+                    cascadable_model.setdefault(model_obj._name, {}).setdefault(field._obj, []).append(field_name)
+        for model in cascadable_model:
+            invalidating_fields = self._get_invalidating_fields(model)
+            for field_inv in invalidating_fields:
+                for parent_model in cascadable_model[model]:
+                    if field_inv not in self._get_invalidating_fields(parent_model):
+                        result.setdefault(parent_model, list())
+                        if field_inv not in result[parent_model]:
+                            result[parent_model].append(field_inv)
+        if verbose:
+            for res in result:
+                print "The model {0} can be be deleted but the following field(s) refer(s) to it: ".format(res)
+                for model, field in result[res]:
+                    print "\tField {1}, carried by model {0}".format(model, field)
+            print "Total: {}".format(len(result))
         return result
 
 SmileTest()
