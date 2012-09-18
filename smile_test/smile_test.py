@@ -192,7 +192,11 @@ class SmileTest(osv.osv_memory):
         """
         cascadable_model = {}
         result = {}
-        for model_obj in self.pool.obj_pool.values():
+        if major_version == '6.1':
+            models = self.pool.models.values()
+        else:
+            models = self.pool.obj_pool.values()
+        for model_obj in models:
             for field_name, field in model_obj._columns.items():
                 if field.ondelete == 'cascade':
                     cascadable_model.setdefault(model_obj._name, {}).setdefault(field._obj, []).append(field_name)
