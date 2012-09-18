@@ -244,8 +244,8 @@ class SourceDir(object):
         if self.conf.get('m2o_required_ondelete_file'):
             self.m2o_required_ondelete_check(self.conf.get('m2o_required_ondelete_file'))
         # Check Print and Pdb
-        if self.conf.get('check_print_pdb'):
-            self.check_print_pdb(self.conf.get('check_print_pdb'))
+        if self.conf.get('check_print_pdb_file'):
+            self.check_print_pdb(self.conf.get('check_print_pdb_file'))
 
     def sloccount(self, sloccount_file):
         remove_file(sloccount_file)
