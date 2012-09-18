@@ -201,9 +201,9 @@ class  CheckPrintPdb(ast.NodeVisitor):
 
     def visit(self, node):
         if isinstance(node, ast.Print):
-            self.linenos.append(node.lineno)
+            self.linenos.append((node.lineno, 'print'))
         elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == 'set_trace':
-            self.linenos.append(node.lineno)
+            self.linenos.append((node.lineno, 'pdb'))
         return super(CheckPrintPdb, self).visit(node)
 
 
@@ -330,9 +330,11 @@ class SourceDir(object):
                     print 'Error parsing file: %s: %s' % (filename, repr(e))
         with open(check_print_pdb_file, 'w') as check_print_pdb_file:
             for filename, linenos in errors_found.items():
-                for lineno in linenos:
-                    check_print_pdb_file.write('%s:%s :print or pdb statement\n' % (filename, lineno))
-
+                for lineno, error in linenos:
+                    if error == 'print':
+                        check_print_pdb_file.write('%s:%s :print statement\n' % (filename, lineno))
+                    else:
+                        check_print_pdb_file.write('%s:%s :pdb set_trace()\n' % (filename, lineno))
 
 if __name__ == '__main__':
     assert len(sys.argv) == 2 and sys.argv[1], "config-file is mandatory"
