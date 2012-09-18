@@ -194,6 +194,20 @@ class Many2OneRequiredOnDelete(ast.NodeVisitor):
         return super(Many2OneRequiredOnDelete, self).visit(node)
 
 
+class  CheckPrintPdb(ast.NodeVisitor):
+    def __init__(self, *args, **kwargs):
+        self.linenos = []
+        super(CheckPrintPdb, self).__init__(*args, **kwargs)
+
+    def visit(self, node):
+        if isinstance(node, ast.Print):
+            self.linenos.append(node.lineno)
+        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == 'set_trace':
+            self.linenos.append(node.lineno)
+        return super(CheckPrintPdb, self).visit(node)
+
+
+
 class SourceDir(object):
     # TODO: accepter une liste de dir avec split sur ',' ?
     # puis pour chaque test: delete(*_file) puis open en mode 'a' pour rajouter les trucs dans le fichier ?
@@ -229,6 +243,9 @@ class SourceDir(object):
         # Many2one required=True without ondelete
         if self.conf.get('m2o_required_ondelete_file'):
             self.m2o_required_ondelete_check(self.conf.get('m2o_required_ondelete_file'))
+        # Check Print and Pdb
+        if self.conf.get('check_print_pdb'):
+            self.check_print_pdb(self.conf.get('check_print_pdb'))
 
     def sloccount(self, sloccount_file):
         remove_file(sloccount_file)
@@ -297,6 +314,25 @@ class SourceDir(object):
             for filename, linenos in errors_found.items():
                 for lineno in linenos:
                     m2o_required_ondeletefile.write('%s:%s :fields.many2one required=True without any ondelete\n' % (filename, lineno))
+
+    def check_print_pdb(self, check_print_pdb_file):
+        """Checks for print and/or pdb statements"""
+        remove_file(check_print_pdb_file)
+        errors_found = {}
+        for filename in self.python_files:
+            with open(filename) as python_file:
+                try:
+                    tree = ast.parse(python_file.read())
+                    chk_print_pdb = CheckPrintPdb()
+                    chk_print_pdb.visit(tree)
+                    errors_found[filename] = chk_print_pdb.linenos
+                except Exception, e:
+                    print 'Error parsing file: %s: %s' % (filename, repr(e))
+        with open(check_print_pdb_file, 'w') as check_print_pdb_file:
+            for filename, linenos in errors_found.items():
+                for lineno in linenos:
+                    check_print_pdb_file.write('%s:%s :print or pdb statement\n' % (filename, lineno))
+
 
 if __name__ == '__main__':
     assert len(sys.argv) == 2 and sys.argv[1], "config-file is mandatory"
