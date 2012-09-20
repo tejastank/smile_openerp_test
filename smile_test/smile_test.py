@@ -181,14 +181,14 @@ class SmileTest(osv.osv_memory):
         return True
 
     # used to ignore basic invalidating scheme like store=True
-    invalidating_functions_code_to_ignore = [f.__code__.co_code for f in
+    invalidating_functions_code_to_ignore = [f.func_code.co_code for f in
                                              (lambda obj, cr, uid, ids: ids, # ~lambda self, cr, uid, ids, c={}: ids
                                               lambda *a : [])] # ~lambda self, cr, uid, ids, c={}: []
 
     def _get_invalidating_fields(self, model_name):
         res = []
         for model_field_tuple in self.pool._store_function.get(model_name, []):
-            if model_field_tuple[2].__code__.co_code not in self.invalidating_functions_code_to_ignore:
+            if model_field_tuple[2].func_code.co_code not in self.invalidating_functions_code_to_ignore:
                 res.append((model_field_tuple[0], model_field_tuple[1]))
         return res
 
