@@ -185,10 +185,10 @@ class SmileTest(osv.osv_memory):
                                              (lambda obj, cr, uid, ids: ids, # ~lambda self, cr, uid, ids, c={}: ids
                                               lambda *a : [])] # ~lambda self, cr, uid, ids, c={}: []
 
-    def _get_invalidating_fields(self, model_name):
+    def _get_invalidating_fields(self, model_name, ignore_functions=True):
         res = []
         for model_field_tuple in self.pool._store_function.get(model_name, []):
-            if model_field_tuple[2].func_code.co_code not in self.invalidating_functions_code_to_ignore:
+            if not ignore_functions or model_field_tuple[2].func_code.co_code not in self.invalidating_functions_code_to_ignore:
                 res.append((model_field_tuple[0], model_field_tuple[1]))
         return res
 
@@ -210,7 +210,7 @@ class SmileTest(osv.osv_memory):
             invalidating_fields = self._get_invalidating_fields(model)
             for field_inv in invalidating_fields:
                 for parent_model in cascadable_model[model]:
-                    if field_inv not in self._get_invalidating_fields(parent_model):
+                    if field_inv not in self._get_invalidating_fields(parent_model, False):
                         result.setdefault(parent_model, list())
                         if field_inv not in result[parent_model]:
                             result[parent_model].append(field_inv)
