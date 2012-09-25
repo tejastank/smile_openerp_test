@@ -194,7 +194,7 @@ class Many2OneRequiredOnDelete(ast.NodeVisitor):
         return super(Many2OneRequiredOnDelete, self).visit(node)
 
 
-class  CheckPrintPdb(ast.NodeVisitor):
+class CheckPrintPdb(ast.NodeVisitor):
     def __init__(self, *args, **kwargs):
         self.linenos = []
         super(CheckPrintPdb, self).__init__(*args, **kwargs)
@@ -205,7 +205,6 @@ class  CheckPrintPdb(ast.NodeVisitor):
         elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == 'set_trace':
             self.linenos.append((node.lineno, 'pdb'))
         return super(CheckPrintPdb, self).visit(node)
-
 
 
 class SourceDir(object):
@@ -336,6 +335,18 @@ class SourceDir(object):
                     else:
                         check_print_pdb_file.write('%s:%s :pdb set_trace()\n' % (filename, lineno))
 
+
+def report_cascade_on_delete_on_invalidation(db, report_filename):
+    remove_file(report_filename)
+    result = db.sock_exec('smile.test', 'detect_cascade_on_delete_on_invalidation', False)
+    if result:
+        with open(report_filename, 'w') as report_file:
+            for res in result:
+                for tup in result[res]:
+                    msg = "Field %s, carried by %s, invalidated by model: %s, which can be deleted by cascade.\n" % (tup[1], tup[0], res)
+                    report_file.write(msg)
+
+
 if __name__ == '__main__':
     assert len(sys.argv) == 2 and sys.argv[1], "config-file is mandatory"
     conf = load_config(sys.argv[1])
@@ -370,8 +381,10 @@ if __name__ == '__main__':
         db.sock_exec('smile.test', 'test_to_xunitfile', 'all', conf['xunit_file'], ignore_tests)
         time.sleep(5)
         server.sock_common.coverage_stop_and_save(conf.get('coverage_file'), source_dir.python_files)
-        time.sleep(1)
+        if conf.get('cascade_invalidation_file'):
+            report_cascade_on_delete_on_invalidation(db, conf.get('cascade_invalidation_file'))
     finally:
+        time.sleep(1)
         # Drop db
         db.drop()
     # Kill OpenERP
