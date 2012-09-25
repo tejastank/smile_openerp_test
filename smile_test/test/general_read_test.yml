@@ -1,0 +1,26 @@
+-
+  I test all search and reads
+-
+  !python {model: ir.model}: |
+    model_ids = self.search(cr, uid, [], context)
+    errors = []
+    for model in self.browse(cr, uid, model_ids, context):
+        model_obj = self.pool.get(model.model)
+        try:
+            test_type = 'count'
+            count = model_obj.search(cr, uid, [], context=context, count=True)
+            if count:
+                test_type = 'search_limit'
+                res_id = model_obj.search(cr, uid, [], limit=1, context=context)
+                test_type = 'read_one'
+                res_infos = model_obj.read(cr, uid, res_id, [], context)
+                test_type = 'search_all'
+                res_ids = model_obj.search(cr, uid, [], context=context)
+                test_type = 'read_all'
+                res_infos = model_obj.read(cr, uid, res_ids, [], context)
+        except Exception, e:
+            err_info = (model.model, test_type, repr(e))
+            errors.append(err_info)
+    if errors:
+        err_details = "\n".join(["(%s, %s): %s" % (model, view_type, err) for model, view_type, err in errors])
+        raise Exception('Error in search/read for model/test and error:\n%s' % err_details)
