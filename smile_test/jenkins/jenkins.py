@@ -382,6 +382,7 @@ if __name__ == '__main__':
         time.sleep(5)
         server.sock_common.coverage_stop_and_save(conf.get('coverage_file'), source_dir.python_files)
         if conf.get('cascade_invalidation_file'):
+            time.sleep(1)
             report_cascade_on_delete_on_invalidation(db, conf.get('cascade_invalidation_file'))
     finally:
         time.sleep(1)
