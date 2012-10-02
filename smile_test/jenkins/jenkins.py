@@ -207,6 +207,17 @@ class CheckPrintPdb(ast.NodeVisitor):
         return super(CheckPrintPdb, self).visit(node)
 
 
+class CheckOverloadedSearch(ast.NodeVisitor):
+    def __init__(self, *args, **kwargs):
+        self.linenos = []
+        super(CheckOverloadedSearch, self).__init__(*args, **kwargs)
+
+    def visit(self, node):
+        if isinstance(node, ast.FunctionDef) and node.name == 'search':
+            self.linenos.append((node.lineno, 'overloaded search'))
+        return super(CheckOverloadedSearch, self).visit(node)
+
+
 class SourceDir(object):
     # TODO: accepter une liste de dir avec split sur ',' ?
     # puis pour chaque test: delete(*_file) puis open en mode 'a' pour rajouter les trucs dans le fichier ?
@@ -245,6 +256,8 @@ class SourceDir(object):
         # Check Print and Pdb
         if self.conf.get('check_print_pdb_file'):
             self.check_print_pdb(self.conf.get('check_print_pdb_file'))
+        if self.conf.get('check_overloaded_search_file'):
+            self.check_overloaded_search(self.conf.get('check_overloaded_search_file'))
 
     def sloccount(self, sloccount_file):
         remove_file(sloccount_file)
@@ -315,7 +328,7 @@ class SourceDir(object):
                     m2o_required_ondeletefile.write('%s:%s :fields.many2one required=True without any ondelete\n' % (filename, lineno))
 
     def check_print_pdb(self, check_print_pdb_file):
-        """Checks for print and/or pdb statements"""
+        """Checks for print and/or pdb statements."""
         remove_file(check_print_pdb_file)
         errors_found = {}
         for filename in self.python_files:
@@ -334,6 +347,26 @@ class SourceDir(object):
                         check_print_pdb_file.write('%s:%s :print statement\n' % (filename, lineno))
                     else:
                         check_print_pdb_file.write('%s:%s :pdb set_trace()\n' % (filename, lineno))
+
+    def check_overloaded_search(self, check_overloaded_search_file):
+        """Checks for overloaded search functions."""
+        remove_file(check_overloaded_search_file)
+        errors_found = {}
+        for filename in self.python_files:
+            with open(filename) as python_file:
+                try:
+                    tree = ast.parse(python_file.read())
+                    chk_overloaded_search = CheckOverloadedSearch()
+                    chk_overloaded_search.visit(tree)
+                    errors_found[filename] = chk_overloaded_search.linenos
+                except Exception, e:
+                    print 'Error parsing file: %s: %s' % (filename, repr(e))
+        with open(check_overloaded_search_file, 'w') as \
+                check_overloaded_search_file:
+            for filename, linenos in errors_found.items():
+                for lineno, error in linenos:
+                    check_overloaded_search_file.write(
+                        '%s:%s :overloaded search statement\n' % (filename, lineno))
 
 
 def report_cascade_on_delete_on_invalidation(db, report_filename):
