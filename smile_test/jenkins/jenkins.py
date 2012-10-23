@@ -100,10 +100,17 @@ class ServerProxy(object):
         args = [self.command, '--config=%s' % self.conffile]
         if self.version == '6.0':
             args.append('--log-level=%s' % self.log_level)
-        elif self.version == '6.1':
+        elif self.version in ('6.1', '7.0'):
             args.append('--log-handler=%s' % self.log_handler)
+
         if self.test_disable:
-            args.append('--test-disable')
+            if self.version in ('6.0', '6.1'):
+                args.append('--test-disable')
+            # No need for 7.0: --test-enable defaults to False
+        else:
+            if self.version == '7.0':
+                args.append('--test-enable')
+            # No need for 6.*: --test-disable defaults to False
         print args
         self.popen = subprocess.Popen(args)
         time.sleep(5)
