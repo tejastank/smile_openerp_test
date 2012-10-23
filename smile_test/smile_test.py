@@ -68,7 +68,10 @@ class SmileTest(osv.osv_memory):
         elif ext == '.csv':
             tools.convert_csv_import(cr, module_name, pathname, open_file.read(), idref=None, mode='update', noupdate=False)
         elif ext == '.yml':
-            tools.convert_yaml_import(cr, module_name, open_file, idref=None, mode='update', noupdate=False)
+            if major_version == '7.0':
+                tools.convert_yaml_import(cr, module_name, open_file, kind='test', idref=None, mode='update', noupdate=False)
+            else:
+                tools.convert_yaml_import(cr, module_name, open_file, idref=None, mode='update', noupdate=False)
         else:
             tools.convert_xml_import(cr, module_name, open_file, idref=None, mode='update', noupdate=False)
 
