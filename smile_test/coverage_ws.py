@@ -74,5 +74,5 @@ def new_dispatch_6_1(self, method, params):
 
 if major_version == '6.0':
     common.dispatch = new_dispatch_6_0
-elif major_version == '6.1':
+elif major_version in ('6.1', '7.0'):
     common.dispatch = new_dispatch_6_1

@@ -47,7 +47,7 @@ class SmileTest(osv.osv_memory):
         assert isinstance(module_list, list), 'Module list should be a list'
         module_test_files = {}
         for module_name in module_list:
-            if major_version == '6.1':
+            if major_version in ('6.1', '7.0'):
                 from modules.module import load_information_from_description_file
                 info = load_information_from_description_file(module_name)
             else:
@@ -68,7 +68,10 @@ class SmileTest(osv.osv_memory):
         elif ext == '.csv':
             tools.convert_csv_import(cr, module_name, pathname, open_file.read(), idref=None, mode='update', noupdate=False)
         elif ext == '.yml':
-            tools.convert_yaml_import(cr, module_name, open_file, idref=None, mode='update', noupdate=False)
+            if major_version == '7.0':
+                tools.convert_yaml_import(cr, module_name, open_file, kind='test', idref=None, mode='update', noupdate=False)
+            else:
+                tools.convert_yaml_import(cr, module_name, open_file, idref=None, mode='update', noupdate=False)
         else:
             tools.convert_xml_import(cr, module_name, open_file, idref=None, mode='update', noupdate=False)
 
@@ -198,7 +201,7 @@ class SmileTest(osv.osv_memory):
         """
         cascadable_model = {}
         result = {}
-        if major_version == '6.1':
+        if major_version in ('6.1', '7.0'):
             models = self.pool.models.values()
         else:
             models = self.pool.obj_pool.values()

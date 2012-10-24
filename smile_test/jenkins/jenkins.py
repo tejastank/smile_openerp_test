@@ -100,10 +100,17 @@ class ServerProxy(object):
         args = [self.command, '--config=%s' % self.conffile]
         if self.version == '6.0':
             args.append('--log-level=%s' % self.log_level)
-        elif self.version == '6.1':
+        elif self.version in ('6.1', '7.0'):
             args.append('--log-handler=%s' % self.log_handler)
+
         if self.test_disable:
-            args.append('--test-disable')
+            if self.version in ('6.0', '6.1'):
+                args.append('--test-disable')
+            # No need for 7.0: --test-enable defaults to False
+        else:
+            if self.version == '7.0':
+                args.append('--test-enable')
+            # No need for 6.*: --test-disable defaults to False
         print args
         self.popen = subprocess.Popen(args)
         time.sleep(5)
@@ -128,7 +135,6 @@ class ServerProxy(object):
                 time.sleep(5)
 
     def create_db_and_wait(self, dbname, demo=False, lang='en_US', user_password='admin'):
-        print 'creating db:%s' % (dbname,)
         db_id = self.sock_db.create(self.admin_passwd, dbname, demo, lang, user_password)
         while True:
             progress = self.sock_db.get_progress(self.admin_passwd, db_id)[0]
@@ -141,8 +147,8 @@ class ServerProxy(object):
         self.create_db_and_wait(dbname, demo, lang, user_password)
         return OpenerpDatabase(self, dbname, user_password)
 
-    def create_timed_db(self, demo=False, lang='en_US', user_password='admin'):
-        dbname = 'testdb_%s' % (time.strftime('%Y%m%d_%H%M%S'),)
+    def create_timed_db(self, prefix='testdb_', demo=False, lang='en_US', user_password='admin'):
+        dbname = prefix + time.strftime('%Y%m%d_%H%M%S')
         return self.create_db(dbname, demo, lang, user_password)
 
     def drop_db(self, db_name):
@@ -397,7 +403,8 @@ if __name__ == '__main__':
                          log_level='test', log_handler=':TEST', test_disable=True, version=conf.get('openerp_version', '6.0'))
     server.start()
     # Create test database
-    db = server.create_timed_db(demo=conf.get('demo', True), lang=conf.get('lang', 'fr_FR'), user_password='admin')
+    db = server.create_timed_db(prefix=conf.get('db_prefix', 'testdb_'), demo=conf.get('demo', True),
+                                lang=conf.get('lang', 'fr_FR'), user_password='admin')
     try:
         db.install_modules(['smile_test'])
         server.sock_common.coverage_start(True, source_dir.python_files)
