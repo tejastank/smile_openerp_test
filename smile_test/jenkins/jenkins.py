@@ -172,9 +172,12 @@ class OpenerpDatabase(object):
             if not module_ids:
                 raise Exception('Module %s does not exist' % (module_name))
             module_ids_to_install.append(module_ids[0])
-        self.sock_exec('ir.module.module', 'button_install', module_ids_to_install)
-        mem_id = self.sock_exec('base.module.upgrade', 'create', {})
-        self.sock_exec('base.module.upgrade', 'upgrade_module', [mem_id])
+        try:
+            self.sock_exec('ir.module.module', 'button_install', module_ids_to_install)
+            mem_id = self.sock_exec('base.module.upgrade', 'create', {})
+            self.sock_exec('base.module.upgrade', 'upgrade_module', [mem_id])
+        except xmlrpclib.Fault, f:
+            raise Exception(f.faultString)
 
     def drop(self):
         self.server.drop_db(self.dbname)
