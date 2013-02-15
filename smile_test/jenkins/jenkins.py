@@ -430,7 +430,8 @@ if __name__ == '__main__':
             report_cascade_on_delete_on_invalidation(db, conf.get('cascade_invalidation_file'))
     finally:
         time.sleep(1)
-        # Drop db
-        db.drop()
+        # Drop db (if not configured otherwise)
+        if not conf.get('keep_db'):
+            db.drop()
     # Kill OpenERP
     server.kill()
