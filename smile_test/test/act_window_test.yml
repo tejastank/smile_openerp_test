@@ -6,7 +6,12 @@
     import datetime
     from dateutil.relativedelta import relativedelta
 
-    act_window_ids = self.search(cr, uid, [], context=context)
+    # Only test act_windo from menus: others might require active_ids
+    menu_ids = self.pool.get('ir.ui.menu').search(cr, uid, [], context=context)
+    menu_infos = self.pool.get('ir.ui.menu').read(cr, uid, menu_ids, ['action'], context)
+
+    actions = [info['action'].split(',') for info in menu_infos if info['action']]
+    act_window_ids = list(set([int(res_id) for model, res_id in actions if model == 'ir.actions.act_window']))
 
     # under the form (act_window_name, model)
     ignored_act_windows = [('Bill Payment', 'account.voucher'),
