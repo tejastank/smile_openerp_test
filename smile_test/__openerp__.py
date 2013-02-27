@@ -32,6 +32,7 @@
     'update_xml': [],
     'test': ['test/fields_view_get_test.yml',
              'test/general_read_test.yml',
+             'test/act_window_test.yml',
              'test/ir_rule.yml'],
     'installable': True,
     'active': False,
