@@ -14,7 +14,7 @@
                            'account.change.currency', 'account.chart', 'account.common.account.report', 'account.common.journal.report',
                            'account.common.report', 'account.fiscalyear.close', 'account.fiscalyear.close.state', 'account.general.journal',
                            'account.installer', 'account.installer.modules', 'account.invoice.cancel', 'account.invoice.confirm',
-                           'account.invoice.refund']:
+                           'account.invoice.refund', 'aeroo.print_actions']:
             # Ignore models from server and official addons
             continue
         for view_type in ['form', 'tree']:
