@@ -4,7 +4,8 @@
   !python {model: ir.model}: |
     ignored_models = ['hr.expense.report', 'report.stock.inventory', 'board.board',
                      'ir.needaction_mixin', 'mail.favorite', 'mail.thread', 'mail.vote',
-                     'ir.config_parameter', 'ir.server.object.lines', 'res.widget.user']
+                     'ir.config_parameter', 'ir.server.object.lines', 'res.widget.user',
+                     'workflow.triggers', 'report.stock.lines.date', 'oo.config']
     model_ids = self.search(cr, uid, [], context)
     errors = []
     for model in self.browse(cr, uid, model_ids, context):
